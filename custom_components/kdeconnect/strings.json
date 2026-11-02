@@ -1,0 +1,171 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "user": {
+        "title": "Find a KDE Connect device",
+        "description": "Home Assistant announces itself on the network and waits for KDE Connect devices to connect back. Leave the host empty to search the whole network, or enter the desktop's IP address if broadcast doesn't reach it.",
+        "data": {
+          "host": "Host"
+        },
+        "data_description": {
+          "host": "IP address of the desktop running KDE Connect (optional)."
+        }
+      },
+      "pick": {
+        "title": "Choose a device",
+        "data": {
+          "device_id": "Device"
+        }
+      },
+      "confirm": {
+        "description": "Pair Home Assistant with {name}?"
+      },
+      "reauth_confirm": {
+        "title": "Pair again",
+        "description": "{name} no longer trusts Home Assistant. Pair again to restore the connection."
+      },
+      "connect_failed": {
+        "title": "Couldn't reach {name}",
+        "description": "{name} didn't connect to Home Assistant. Make sure KDE Connect is running, that the desktop firewall allows the kde-connect service (TCP/UDP 1714-1764), and that Home Assistant's TCP ports 1716-1764 are reachable from the desktop. Submit to try again."
+      },
+      "pair_failed": {
+        "title": "Pairing failed",
+        "description": "The pairing request to {name} was rejected or timed out. Submit to try again."
+      }
+    },
+    "progress": {
+      "connect": "Waiting for {name} to connect…",
+      "pair": "Accept the pairing request on {name} within 30 seconds. It should show the code **{code}**."
+    },
+    "error": {
+      "no_devices": "No KDE Connect devices responded. Check that KDE Connect is running and the firewall allows it, or enter the IP address."
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "not_supported": "This device isn't supported (KDE Connect protocol 8 or newer is required).",
+      "reauth_successful": "Paired again successfully."
+    }
+  },
+  "entity": {
+    "button": {
+      "ping": {
+        "name": "Ping"
+      },
+      "ring": {
+        "name": "Ring"
+      }
+    },
+    "lock": {
+      "screen_lock": {
+        "name": "Screen lock"
+      }
+    }
+  },
+  "services": {
+    "ping": {
+      "name": "Ping",
+      "description": "Show a ping notification on the device.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Device",
+          "description": "The paired KDE Connect device."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Text to show instead of \"Ping!\"."
+        }
+      }
+    },
+    "share_url": {
+      "name": "Share URL",
+      "description": "Open a URL on the device.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Device",
+          "description": "The paired KDE Connect device."
+        },
+        "url": {
+          "name": "URL",
+          "description": "The URL to open."
+        }
+      }
+    },
+    "share_text": {
+      "name": "Share text",
+      "description": "Send text to the device.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Device",
+          "description": "The paired KDE Connect device."
+        },
+        "text": {
+          "name": "Text",
+          "description": "The text to send."
+        }
+      }
+    },
+    "run_command": {
+      "name": "Run command",
+      "description": "Run a command defined in the device's KDE Connect settings for Home Assistant.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Device",
+          "description": "The paired KDE Connect device."
+        },
+        "key": {
+          "name": "Command",
+          "description": "Command key or display name."
+        }
+      }
+    },
+    "send_notification": {
+      "name": "Send notification",
+      "description": "Show a notification on the device, optionally with action buttons. Pressed actions fire a kdeconnect_notification_action event.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Device",
+          "description": "The paired KDE Connect device."
+        },
+        "message": {
+          "name": "Message",
+          "description": "Notification body."
+        },
+        "title": {
+          "name": "Title",
+          "description": "Notification title."
+        },
+        "app_name": {
+          "name": "App name",
+          "description": "Application name shown with the notification."
+        },
+        "id": {
+          "name": "ID",
+          "description": "Reuse an ID to update an existing notification."
+        },
+        "actions": {
+          "name": "Actions",
+          "description": "Labels for action buttons."
+        },
+        "silent": {
+          "name": "Silent",
+          "description": "Add to the notification list without a popup."
+        }
+      }
+    },
+    "cancel_notification": {
+      "name": "Cancel notification",
+      "description": "Remove a notification sent earlier.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Device",
+          "description": "The paired KDE Connect device."
+        },
+        "id": {
+          "name": "ID",
+          "description": "The notification ID returned by send_notification."
+        }
+      }
+    }
+  }
+}

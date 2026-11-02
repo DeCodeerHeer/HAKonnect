@@ -1,0 +1,91 @@
+ping:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: kdeconnect
+    message:
+      selector:
+        text:
+
+share_url:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: kdeconnect
+    url:
+      required: true
+      example: https://www.home-assistant.io
+      selector:
+        text:
+          type: url
+
+share_text:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: kdeconnect
+    text:
+      required: true
+      selector:
+        text:
+          multiline: true
+
+run_command:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: kdeconnect
+    key:
+      required: true
+      selector:
+        text:
+
+send_notification:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: kdeconnect
+    message:
+      required: true
+      selector:
+        text:
+          multiline: true
+    title:
+      selector:
+        text:
+    app_name:
+      selector:
+        text:
+    id:
+      selector:
+        text:
+    actions:
+      selector:
+        text:
+          multiple: true
+    silent:
+      default: false
+      selector:
+        boolean:
+
+cancel_notification:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: kdeconnect
+    id:
+      required: true
+      selector:
+        text:
