@@ -11,9 +11,13 @@ Home Assistant joins your network as a KDE Connect device, the way a phone does.
 | `lock` | Locks or unlocks the screen (logind) | Lock device |
 | `button` (one per command) | Runs a command you define on the desktop under *KDE Connect → Home Assistant → Run commands* | Run commands |
 | `button` Ping / Ring | Sends a ping notification, or rings the desktop | Ping / Find this device |
+| `sensor` Battery, `binary_sensor` Charging | Battery level and charging state. Only created after the desktop reports a battery, so laptops get them and desktop PCs don't. | Battery monitor |
+| `event` Notification | Fires on every notification the desktop forwards to HA, with `app_name`, `title`, `text` and `ticker`. Shows in history and works as an automation trigger. | Send notifications |
 | `binary_sensor` Connectivity | Whether the desktop is connected. kdeconnectd only runs while someone is logged in, so this also works as a presence signal. | – |
 | `kdeconnect.send_notification` | Notification with action buttons. A press fires `kdeconnect_notification_action` (`key`, `action`). | Notification sync |
 | `kdeconnect.share_url` / `share_text` / `run_command` / `ping` / `cancel_notification` | | Share / Run commands / Ping |
+
+Desktop notifications reach HA only if you enable **Send notifications** for the HA device in the desktop's KDE Connect settings (it's off by default). Enable it while HA is connected: the desktop only reloads a device's plugins while that device is reachable.
 
 Events: `kdeconnect_notification_action`, `kdeconnect_ping`, `kdeconnect_command_output`, and `kdeconnect_notification` (desktop notifications sent to HA, if you enable the desktop's "Send notifications" plugin for the HA device).
 

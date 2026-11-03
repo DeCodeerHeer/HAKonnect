@@ -30,6 +30,7 @@ TYPE_RUNCOMMAND_OUTPUT = "kdeconnect.runcommand.output"
 TYPE_RUNCOMMAND_REQUEST = "kdeconnect.runcommand.request"
 TYPE_LOCK = "kdeconnect.lock"
 TYPE_LOCK_REQUEST = "kdeconnect.lock.request"
+TYPE_BATTERY = "kdeconnect.battery"
 TYPE_NOTIFICATION = "kdeconnect.notification"
 TYPE_NOTIFICATION_ACTION = "kdeconnect.notification.action"
 TYPE_SHARE_REQUEST = "kdeconnect.share.request"
@@ -48,6 +49,7 @@ INCOMING_CAPABILITIES = [
     TYPE_NOTIFICATION,
     TYPE_NOTIFICATION_ACTION,
     TYPE_SYSTEMVOLUME,
+    TYPE_BATTERY,
 ]
 
 # What we send. The desktop loads a plugin when our outgoing types intersect

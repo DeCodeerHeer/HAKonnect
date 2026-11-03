@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
-from homeassistant.core import callback
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
@@ -39,3 +42,35 @@ class KdeConnectEntity(Entity):
     def _handle_event(self, event: Event, data: Any) -> None:
         if event is Event.CONNECTION or event is Event.UNPAIRED or event in self._events:
             self.async_write_ha_state()
+
+
+@callback
+def async_add_when_battery_seen(
+    hass: HomeAssistant,
+    entry: ConfigEntry[RemoteDevice],
+    platform: str,
+    key: str,
+    entities: Callable[[], list[Entity]],
+    async_add_entities: Callable[[list[Entity]], None],
+) -> None:
+    """Add battery entities once the desktop reports a battery (or did before).
+
+    Desktops without a battery never send kdeconnect.battery, so they get no
+    battery entities at all instead of permanently unknown ones.
+    """
+    device = entry.runtime_data
+    known = er.async_get(hass).async_get_entity_id(platform, DOMAIN, f"{device.device_id}_{key}")
+    added = False
+
+    @callback
+    def maybe_add(event: Event | None = None, _data: Any = None) -> None:
+        nonlocal added
+        if added or (event is not None and event is not Event.BATTERY):
+            return
+        if known or device.battery_charge is not None:
+            added = True
+            async_add_entities(entities())
+
+    maybe_add()
+    if not added:
+        entry.async_on_unload(device.add_listener(maybe_add))

@@ -14,6 +14,7 @@ from typing import Any
 
 from .const import (
     PAIR_TIMEOUT,
+    TYPE_BATTERY,
     TYPE_FINDMYPHONE_REQUEST,
     TYPE_LOCK,
     TYPE_LOCK_REQUEST,
@@ -56,6 +57,7 @@ class Event(StrEnum):
     NOTIFICATION_ACTION = "notification_action"  # data = {"key", "action"}
     NOTIFICATION = "notification"  # incoming desktop notification; data = body
     UNPAIRED = "unpaired"
+    BATTERY = "battery"
 
 
 @dataclass(slots=True)
@@ -125,6 +127,10 @@ class RemoteDevice:
         self.commands: dict[str, dict[str, str]] = {}
         self.locked: bool | None = None
         self.sinks: list[dict[str, Any]] = []
+        # Pushed by the desktop on connect and on change; stays None without a battery.
+        self.battery_charge: int | None = None
+        self.battery_charging: bool | None = None
+        self.battery_low: bool = False
         self._listeners: list[Listener] = []
         self._pair_future: asyncio.Future[bool] | None = None
 
@@ -296,6 +302,15 @@ class RemoteDevice:
                     sink.update({k: v for k, v in body.items() if k != "name"})
         self._emit(Event.SINKS)
 
+    def _on_battery(self, body: dict[str, Any]) -> None:
+        charge = body.get("currentCharge")
+        if not isinstance(charge, int) or charge < 0:
+            return  # -1 means unknown
+        self.battery_charge = charge
+        self.battery_charging = bool(body.get("isCharging"))
+        self.battery_low = body.get("thresholdEvent") == 1  # ThresholdBatteryLow
+        self._emit(Event.BATTERY)
+
     def _on_ping(self, body: dict[str, Any]) -> None:
         self._emit(Event.PING, body.get("message"))
 
@@ -393,6 +408,7 @@ _HANDLERS: dict[str, Callable[[RemoteDevice, dict[str, Any]], None]] = {
     TYPE_LOCK: RemoteDevice._on_lock,
     TYPE_SYSTEMVOLUME: RemoteDevice._on_systemvolume,
     TYPE_PING: RemoteDevice._on_ping,
+    TYPE_BATTERY: RemoteDevice._on_battery,
     TYPE_NOTIFICATION_ACTION: RemoteDevice._on_notification_action,
     TYPE_NOTIFICATION: RemoteDevice._on_notification,
 }

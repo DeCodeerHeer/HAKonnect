@@ -182,3 +182,107 @@ async def test_unpair_triggers_reauth(hass: HomeAssistant, desktop: FakeDesktop)
     await hass.async_block_till_done()
     assert len(desktop.pair_requests) == 2
     await _until(lambda: entry.runtime_data.connected)
+
+
+async def test_battery_entities_appear_on_first_report(hass: HomeAssistant, desktop: FakeDesktop):
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    entry = (await _pair(hass, desktop, result["flow_id"]))["result"]
+    await hass.async_block_till_done()
+    dev = entry.runtime_data
+    await _until(lambda: dev.connected and dev.commands)
+    await hass.async_block_till_done()
+
+    ent_reg = er.async_get(hass)
+    battery_uid = f"{desktop.device_id}_battery"
+    charging_uid = f"{desktop.device_id}_battery_charging"
+    assert ent_reg.async_get_entity_id("sensor", DOMAIN, battery_uid) is None  # no battery, no entity
+
+    desktop.send("kdeconnect.battery", {"currentCharge": 87, "isCharging": True, "thresholdEvent": 0})
+    await _until(lambda: dev.battery_charge == 87)
+    await hass.async_block_till_done()
+    battery = ent_reg.async_get_entity_id("sensor", DOMAIN, battery_uid)
+    charging = ent_reg.async_get_entity_id("binary_sensor", DOMAIN, charging_uid)
+    assert hass.states.get(battery).state == "87"
+    assert hass.states.get(battery).attributes["unit_of_measurement"] == "%"
+    assert hass.states.get(charging).state == STATE_ON
+
+    desktop.send("kdeconnect.battery", {"currentCharge": 12, "isCharging": False, "thresholdEvent": 1})
+    await _until(lambda: dev.battery_charge == 12)
+    await hass.async_block_till_done()
+    assert hass.states.get(battery).state == "12"
+    assert hass.states.get(battery).attributes["low"] is True
+    assert hass.states.get(charging).state == STATE_OFF
+
+    # After a reload the entities come back from the registry before any report.
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done()
+    assert hass.states.get(battery) is not None and hass.states.get(charging) is not None
+
+
+async def test_received_notification_updates_event_entity(hass: HomeAssistant, desktop: FakeDesktop):
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    entry = (await _pair(hass, desktop, result["flow_id"]))["result"]
+    await hass.async_block_till_done()
+    dev = entry.runtime_data
+    await _until(lambda: dev.connected and dev.commands)
+
+    bus_events = []
+    hass.bus.async_listen("kdeconnect_notification", bus_events.append)
+    entity_id = er.async_get(hass).async_get_entity_id("event", DOMAIN, f"{desktop.device_id}_notification_received")
+    # Shaped like sendnotifications' packet, including the icon payload header we ignore.
+    assert desktop._protocol and desktop._protocol.transport
+    desktop._protocol.transport.write(
+        b'{"id":1,"type":"kdeconnect.notification","body":{"id":"0","appName":"HAKonnect","ticker":"Hi: there",'
+        b'"isClearable":false,"title":"Hi","silent":false,"text":"there"},'
+        b'"payloadSize":1234,"payloadTransferInfo":{"port":1739}}\n'
+    )
+    await _until(lambda: bus_events)
+    await hass.async_block_till_done()
+    state = hass.states.get(entity_id)
+    assert state.attributes["event_type"] == "received"
+    assert state.attributes["app_name"] == "HAKonnect"
+    assert state.attributes["title"] == "Hi" and state.attributes["text"] == "there"
+    assert bus_events[0].data["title"] == "Hi"
+
+
+async def test_zeroconf_does_not_touch_configured_entry(hass: HomeAssistant, desktop: FakeDesktop):
+    from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
+
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
+    entry = (await _pair(hass, desktop, result["flow_id"]))["result"]
+    await hass.async_block_till_done()
+    host_before = entry.data["host"]
+
+    info = ZeroconfServiceInfo(
+        ip_address=IPv4Address("100.107.159.59"),  # e.g. Tailscale, rotated in by mDNS
+        ip_addresses=[IPv4Address("100.107.159.59")],
+        hostname="desk.local.",
+        name=f"{desktop.device_id}._kdeconnect._udp.local.",
+        port=1716,
+        type="_kdeconnect._udp.local.",
+        properties={"id": desktop.device_id, "name": desktop.name, "protocol": "8"},
+    )
+    with patch.object(hass.config_entries, "async_schedule_reload") as reload:
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_ZEROCONF}, data=info
+        )
+    assert result["type"] is FlowResultType.ABORT and result["reason"] == "already_configured"
+    assert entry.data["host"] == host_before
+    reload.assert_not_called()
+
+
+def test_pick_address_prefers_lan_ipv4():
+    from ipaddress import IPv6Address
+
+    from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
+
+    info = ZeroconfServiceInfo(
+        ip_address=IPv6Address("fe80::1"),
+        ip_addresses=[IPv6Address("fe80::1"), IPv4Address("100.107.159.59"), IPv4Address("192.168.1.253")],
+        hostname="desk.local.",
+        name="x._kdeconnect._udp.local.",
+        port=1716,
+        type="_kdeconnect._udp.local.",
+        properties={},
+    )
+    assert config_flow._pick_address(info) == "192.168.1.253"

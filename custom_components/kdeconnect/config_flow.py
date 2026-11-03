@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Callable, Mapping
+from ipaddress import ip_network
 from typing import Any
 
 import voluptuous as vol
@@ -24,7 +25,17 @@ from .protocol.packets import is_valid_device_id
 _LOGGER = logging.getLogger(__name__)
 
 DISCOVERY_TIMEOUT = 4.0
+_CGNAT = ip_network("100.64.0.0/10")
 CONNECT_TIMEOUT = 15.0
+
+
+def _pick_address(info: ZeroconfServiceInfo) -> str:
+    """Prefer a private IPv4 address; VPN/IPv6 may not be reachable from HA."""
+    v4 = [a for a in info.ip_addresses if a.version == 4 and not a.is_link_local]
+    for addr in v4:
+        if addr.is_private and addr not in _CGNAT:  # 100.64/10 is Tailscale & co.
+            return str(addr)
+    return str(v4[0] if v4 else info.ip_address)
 
 
 class KdeConnectConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -102,13 +113,17 @@ class KdeConnectConfigFlow(ConfigFlow, domain=DOMAIN):
                 return self.async_abort(reason="not_supported")
         except ValueError:
             return self.async_abort(reason="not_supported")
+        # Configured devices are left alone: the node tracks the address the
+        # desktop actually connects from. The desktop advertises every interface
+        # (LAN, IPv6, VPN) and ip_address rotates between them, so updating the
+        # entry here reloaded it on every mDNS refresh.
+        await self.async_set_unique_id(device_id)
+        self._abort_if_unique_id_configured()
         node = await self._async_hold_node()
         if device_id == node.device_id:
             return self.async_abort(reason="not_supported")
 
-        host = str(discovery_info.ip_address)
-        await self.async_set_unique_id(device_id)
-        self._abort_if_unique_id_configured(updates={CONF_HOST: host})
+        host = _pick_address(discovery_info)
         self._device_id, self._host = device_id, host
         self._name = props.get("name") or device_id
         self.context["title_placeholders"] = {"name": self._name}

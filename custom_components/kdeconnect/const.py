@@ -12,9 +12,11 @@ CONF_CERT = "cert_pem"
 PLATFORMS = [
     Platform.BINARY_SENSOR,
     Platform.BUTTON,
+    Platform.EVENT,
     Platform.LOCK,
     Platform.MEDIA_PLAYER,
     Platform.NOTIFY,
+    Platform.SENSOR,
 ]
 
 STORAGE_KEY_IDENTITY = f"{DOMAIN}.identity"

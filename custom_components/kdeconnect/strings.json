@@ -60,6 +60,18 @@
       "screen_lock": {
         "name": "Screen lock"
       }
+    },
+    "event": {
+      "notification": {
+        "name": "Notification",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "received": "Received"
+            }
+          }
+        }
+      }
     }
   },
   "services": {
