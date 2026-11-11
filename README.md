@@ -23,7 +23,7 @@ Events: `kdeconnect_notification_action`, `kdeconnect_ping`, `kdeconnect_command
 
 ## Setup
 
-1. Copy `custom_components/kdeconnect` into your HA config directory, or add this repository to HACS as a custom repository.
+1. Install with [HACS](https://hacs.xyz): add `https://github.com/decodeerheer/HAKonnect` as a custom repository (category *Integration*), install **KDE Connect** and restart Home Assistant. Or copy `custom_components/kdeconnect` into your HA config directory by hand.
 2. Allow KDE Connect through the desktop firewall: `sudo firewall-cmd --permanent --add-service=kde-connect && sudo firewall-cmd --reload`.
 3. Add the integration under **Settings → Devices & services → Add integration → KDE Connect**. Leave the host empty to search the network, or enter the desktop's IP address.
 4. Accept the pairing request on the desktop within 30 seconds, and check that the code it shows matches the one in HA.
@@ -66,3 +66,7 @@ pytest
 ```
 
 To debug from the desktop side, restart kdeconnectd with `QT_LOGGING_RULES='kdeconnect.core.debug=true'` and follow `journalctl --user -f -u 'app-org.kde.kdeconnect.daemon@autostart.service'`.
+
+## License
+
+The code is released under the [MIT License](LICENSE). The integration icon is derived from the KDE Connect application icon and is GPL-2.0-or-later, like KDE Connect itself (see [assets/ICON-LICENSE.md](assets/ICON-LICENSE.md)). KDE and KDE Connect are trademarks of KDE e.V.; this project is not affiliated with or endorsed by KDE.
