@@ -10,7 +10,7 @@ import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any
+from typing import Any, ClassVar
 
 from .const import (
     PAIR_TIMEOUT,
@@ -84,7 +84,7 @@ class PlayerState:
     shuffle: bool | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
-    _FIELDS = {
+    _FIELDS: ClassVar[dict[str, str]] = {
         "title": "title",
         "artist": "artist",
         "album": "album",

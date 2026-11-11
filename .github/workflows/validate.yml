@@ -36,6 +36,6 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install pytest-homeassistant-custom-component ruff
+      - run: pip install pytest-homeassistant-custom-component ruff==0.17.4
       - run: ruff check .
       - run: pytest

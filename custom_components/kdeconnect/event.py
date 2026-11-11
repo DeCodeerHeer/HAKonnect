@@ -10,7 +10,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import KdeConnectConfigEntry
 from .entity import KdeConnectEntity
-from .protocol.device import Event
+from .protocol.device import Event, RemoteDevice
 
 ATTRS = {"appName": "app_name", "title": "title", "text": "text", "ticker": "ticker", "id": "notification_id"}
 
@@ -23,7 +23,10 @@ async def async_setup_entry(
 
 class KdeConnectNotificationEvent(KdeConnectEntity, EventEntity):
     _attr_translation_key = "notification"
-    _attr_event_types = ["received"]
+
+    def __init__(self, device: RemoteDevice, key: str) -> None:
+        super().__init__(device, key)
+        self._attr_event_types = ["received"]
 
     @callback
     def _handle_event(self, event: Event, data: Any) -> None:
